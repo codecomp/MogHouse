@@ -6,7 +6,7 @@
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 		<style>
 			body {
-				background-color: #000;
+				background-color: #201F1D;
 				color: #fff;
 				margin: 0;
 				overflow: hidden;
@@ -16,125 +16,85 @@
 
 	<body>
 
+		<script src="vendor/dat.gui-master/build/dat.gui.min.js"></script>
+
 		<script src="vendor/three.js-master/build/three.js"></script>
 
-		<script src="vendor/three.js-master/examples/js/loaders/DDSLoader.js"></script>
-		<script src="vendor/three.js-master/examples/js/loaders/MTLLoader.js"></script>
-		<script src="vendor/three.js-master/examples/js/loaders/OBJLoader.js"></script>
+		<script src="vendor/three.js-master/examples/js/controls/OrbitControls.js"></script>
 
-		<script src="vendor/three.js-master/examples/js/Detector.js"></script>
-		<script src="vendor/three.js-master/examples/js/libs/stats.min.js"></script>
+		<script src="vendor/three.js-master/src/extras/helpers/GridHelper.js"></script>
 
 		<script>
 
-			var container, stats, camera, scene, renderer;
-			var mouseX 		= 0;
-			var mouseY 		= 0;
-			var windowHalfX = window.innerWidth / 2;
-			var windowHalfY = window.innerHeight / 2;
+			// Set up the scene, camera, and renderer as global variables.
+			var scene, camera, renderer;
 
 			init();
 			animate();
 
+			// Sets up the scene.
 			function init() {
-
-				container = document.createElement( 'div' );
-				document.body.appendChild( container );
-
-				camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 2000 );
-				camera.position.z = 250;
-
-				// scene
-
+				// Create the scene and set the scene size.
 				scene = new THREE.Scene();
+				var WIDTH = window.innerWidth,
+					HEIGHT = window.innerHeight;
 
-				var ambient = new THREE.AmbientLight( 0x444444 );
-				scene.add( ambient );
+				// Create a renderer and add it to the DOM.
+				renderer = new THREE.WebGLRenderer({antialias:true});
+				renderer.setSize(WIDTH, HEIGHT);
+				document.body.appendChild(renderer.domElement);
+				renderer.domElement.id = "context";
 
-				var directionalLight = new THREE.DirectionalLight( 0xffeedd );
-				directionalLight.position.set( 0, 0, 1 ).normalize();
-				scene.add( directionalLight );
+				// Create a camera, zoom it out from the model a bit, and add it to the scene.
+				camera = new THREE.PerspectiveCamera(45, WIDTH / HEIGHT, 0.1, 20000);
+				camera.position.set(0,6,0);
+				scene.add(camera);
 
-				// model
+				// Create a light, set its position, and add it to the scene.
+				var light = new THREE.PointLight(0xffffff);
+				light.position.set(-100,200,100);
+				scene.add(light);
 
-				var onProgress = function ( xhr ) {
-					if ( xhr.lengthComputable ) {
-						var percentComplete = xhr.loaded / xhr.total * 100;
-						console.log( Math.round(percentComplete, 2) + '% downloaded' );
-					}
-				};
+				var amblight = new THREE.AmbientLight( 0x404040 ); // soft white light
+				scene.add( amblight );
 
-				var onError = function ( xhr ) { };
+				// Create grid helper to aid in positioning
+				var size 	   = 10;
+				var step 	   = 1;
+				var gridHelper = new THREE.GridHelper( size, step );
+				scene.add( gridHelper );
 
-				THREE.Loader.Handlers.add( /\.dds$/i, new THREE.DDSLoader() );
-
-				var mtlLoader = new THREE.MTLLoader();
-				mtlLoader.setBaseUrl( 'obj/moogle/' );
-				mtlLoader.setPath( 'obj/moogle/' );
-				mtlLoader.load( 'mog.mtl', function( materials ) {
-
-					materials.preload();
-
-					var objLoader = new THREE.OBJLoader();
-					objLoader.setMaterials( materials );
-					objLoader.setPath( 'obj/moogle/' );
-					objLoader.load( 'mog.obj', function ( object ) {
-
-						//object.position.y = - 95;
-						object.scale.set(100,100,100);
-						scene.add( object );
-
-					}, onProgress, onError );
-
+				var loader = new THREE.JSONLoader();
+				loader.load('models/mog/mog.json', function(geometry, materials) {
+					mesh = new THREE.SkinnedMesh(
+						geometry,
+						new THREE.MeshFaceMaterial( materials )
+					);
+					scene.add(mesh);
 				});
 
-				renderer = new THREE.WebGLRenderer();
-				renderer.setPixelRatio( window.devicePixelRatio );
-				renderer.setSize( window.innerWidth, window.innerHeight );
-				container.appendChild( renderer.domElement );
+				loader = new THREE.ObjectLoader();
+				loader.load('models/mog_house/mog_house.json', function(obj) {
+					scene.add(obj);
+				});
+				
 
-				document.addEventListener( 'mousemove', onDocumentMouseMove, false );
-
-				window.addEventListener( 'resize', onWindowResize, false );
-
+				// Add OrbitControls so that we can pan around with the mouse.
+				controls = new THREE.OrbitControls(camera, renderer.domElement);
 			}
 
-			function onWindowResize() {
+			// Renders the scene and updates the render as needed.
+			function animate() {
+				requestAnimationFrame( animate );
+				renderer.render( scene, camera );
+				controls.update();
+			}
 
-				windowHalfX = window.innerWidth / 2;
-				windowHalfY = window.innerHeight / 2;
-
+			window.addEventListener('resize', function () {
+				renderer.setSize(window.innerWidth, window.innerHeight);
 				camera.aspect = window.innerWidth / window.innerHeight;
 				camera.updateProjectionMatrix();
-
-				renderer.setSize( window.innerWidth, window.innerHeight );
-
-			}
-
-			function onDocumentMouseMove( event ) {
-
-				mouseX = ( event.clientX - windowHalfX ) / 2;
-				mouseY = ( event.clientY - windowHalfY ) / 2;
-
-			}
-
-			function animate() {
-
-				requestAnimationFrame( animate );
-				render();
-
-			}
-
-			function render() {
-
-				camera.position.x += ( mouseX - camera.position.x ) * .05;
-				camera.position.y += ( - mouseY - camera.position.y ) * .05;
-
-				camera.lookAt( scene.position );
-
-				renderer.render( scene, camera );
-
-			}
+			});
 
 		</script>
 

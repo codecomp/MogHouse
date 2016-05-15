@@ -1,0 +1,15 @@
+001 - 041 Dance 1
+042 - 098 Dance 2
+099 - 153 Dance 3
+154 - 194 Dance 4
+195 - 235 Idle (Nod)
+236 - 276 Wave
+277 - 317 Idle 2 (Panic)
+318 - 344 Panic
+345 - 385 Wave 2
+386 - 396 Idle 3 (Spin)
+397 - 407 Nod
+408 - 462 Spin
+463 - 503 Wave 3
+504 - 544 Idle 3 (Bow)
+545 - 585 Idle 4

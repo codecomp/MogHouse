@@ -2,4 +2,11 @@
 .idea
 
 # Directories
-vendor
+vendor/*
+models/*/obj
+models/*/fbx
+models/*/blender
+models/*/dat
+
+# Overwrites
+!delete.me
