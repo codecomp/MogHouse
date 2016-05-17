@@ -43,6 +43,7 @@ var World = (function(){
 		havePointerLock = 'pointerLockElement' in document || 'mozPointerLockElement' in document || 'webkitPointerLockElement' in document;
 
 	return {
+
 		// Sets up the scene.
 		init: function(){
 
@@ -210,6 +211,7 @@ var World = (function(){
 			ambient1.light.intensity = ambient1.intensity;
 		},
 
+		// Update canvas on resize
 		windowResize: function(){
 			window.addEventListener('resize', function () {
 				renderer.setSize(window.innerWidth, window.innerHeight);
@@ -218,6 +220,7 @@ var World = (function(){
 			});
 		},
 
+		// Restrict pointer to canvas
 		lockPointer: function(){
 			if ( havePointerLock ) {
 				var element = document.body;
