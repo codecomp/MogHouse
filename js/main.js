@@ -69,8 +69,6 @@ var World = (function(){
 		// Create the scene and set the scene size.
 		initScene: function(){
 			scene = new THREE.Scene();
-			var WIDTH = window.innerWidth,
-				HEIGHT = window.innerHeight;
 		},
 
 		// Create a renderer and add it to the DOM
