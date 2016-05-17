@@ -1,6 +1,6 @@
 var World = (function(){
 
-	// Setup the main global variables.
+	// Setup the main global variables
 	var scene, camera, renderer, controls;
 
 	// Setup gui global variable
@@ -48,27 +48,50 @@ var World = (function(){
 		init: function(){
 
 			World.windowResize();
-
 			World.lockPointer();
+			World.initScene();
+			World.initRenderer();
+			World.initCamera();
+			World.initLights();
 
-			// Create the scene and set the scene size.
+			// Create grid helper to aid in positioning
+			var gridHelper = new THREE.GridHelper( 10, 1 );
+			scene.add( gridHelper );
+
+			World.loadModels();
+
+			// Add OrbitControls so that we can pan around with the mouse.
+			controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+			this.animate();
+		},
+
+		// Create the scene and set the scene size.
+		initScene: function(){
 			scene = new THREE.Scene();
 			var WIDTH = window.innerWidth,
 				HEIGHT = window.innerHeight;
+		},
 
-			// Create a renderer and add it to the DOM.
+		// Create a renderer and add it to the DOM
+		initRenderer: function(){
 			renderer = new THREE.WebGLRenderer({antialias:true});
 			renderer.setSize(WIDTH, HEIGHT);
 			renderer.shadowMap.enabled = true;
 			renderer.shadowMap.type = THREE.BasicShadowMap; // For smooth use THREE.PCFSoftShadowMap
 			document.body.appendChild(renderer.domElement);
 			renderer.domElement.id = "context";
+		},
 
-			// Create a camera, zoom it out from the model a bit, and add it to the scene.
+		// Create a camera, zoom it out from the model a bit, and add it to the scene
+		initCamera: function(){
 			camera = new THREE.PerspectiveCamera(45, WIDTH / HEIGHT, 0.1, 20000);
 			camera.position.set(0,6,0);
 			scene.add(camera);
+		},
 
+		// Create lights and assign gui controls
+		initLights: function(){
 			// Create Point Light
 			point1.light = new THREE.PointLight( point1.color, point1.intensity, point1.distance, point1.decay );
 			point1.light.position.set( point1.positionX, point1.positionY, point1.positionZ );
@@ -142,13 +165,11 @@ var World = (function(){
 			ambient1.folder.addColor(ambient1, 'color');
 			ambient1.folder.add(ambient1, 'intensity').min(0).max(10).step(0.1);
 			ambient1.folder.open();
+		},
 
-			// Create grid helper to aid in positioning
-			var size 	   = 10;
-			var step 	   = 1;
-			var gridHelper = new THREE.GridHelper( size, step );
-			scene.add( gridHelper );
-
+		// Load geometry and material assets into scene
+		loadModels: function(){
+			// Load moogle into scene
 			var loader = new THREE.JSONLoader();
 			loader.load('models/mog/mog.json', function(geometry, materials) {
 				mesh = new THREE.SkinnedMesh(
@@ -158,7 +179,7 @@ var World = (function(){
 				scene.add(mesh);
 			});
 
-			// Add geometry to scene
+			// Load mog house into scene
 			loader = new THREE.ObjectLoader();
 			loader.load('models/mog_house/mog_house.json', function(obj) {
 				obj.traverse( function ( child ) {
@@ -170,11 +191,6 @@ var World = (function(){
 				obj.receiveShadow = false;
 				scene.add(obj);
 			});
-
-			// Add OrbitControls so that we can pan around with the mouse.
-			controls = new THREE.OrbitControls(camera, renderer.domElement);
-
-			this.animate();
 		},
 
 		// Renders the scene and updates the render as needed.
@@ -186,7 +202,7 @@ var World = (function(){
 			requestAnimationFrame( World.animate );
 		},
 
-		// Update scene
+		// Update scene based on GUI settings
 		updateGui: function(){
 			// Update Point light
 			point1.light.color.setHex( point1.color );
