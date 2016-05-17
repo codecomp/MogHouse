@@ -45,7 +45,8 @@
 				intensity : 1,
 				distance : 8,
 				decay : 1,
-				helperVisibility : true
+				helperVisibility : true,
+				shadows : true
 			};
 
 			spot1 = {
@@ -58,7 +59,8 @@
 				decay : 1.1,
 				penumbra: 0,
 				angle : 1,
-				helperVisibility : true
+				helperVisibility : true,
+				shadows : true
 			};
 
 			ambient1 = {
@@ -80,6 +82,8 @@
 				// Create a renderer and add it to the DOM.
 				renderer = new THREE.WebGLRenderer({antialias:true});
 				renderer.setSize(WIDTH, HEIGHT);
+				renderer.shadowMap.enabled = true;
+				renderer.shadowMap.type = THREE.BasicShadowMap; // For smooth use THREE.PCFSoftShadowMap
 				document.body.appendChild(renderer.domElement);
 				renderer.domElement.id = "context";
 
@@ -91,10 +95,17 @@
 				// Create Point Light
 				point1.light = new THREE.PointLight( point1.color, point1.intensity, point1.distance, point1.decay );
 				point1.light.position.set( point1.positionX, point1.positionY, point1.positionZ );
+				point1.light.castShadow = point1.shadows;
+				point1.light.shadow.camera.near = 1;
+				point1.light.shadow.camera.far = 10;
+				point1.light.shadow.bias = 0.01;
 				scene.add( point1.light );
 
 				point1.helper = new THREE.PointLightHelper( point1.light, 0.5 );
 				scene.add( point1.helper );
+
+				//point1.shadowHelper = new THREE.CameraHelper( point1.light.shadow.camera );
+				//scene.add( point1.shadowHelper );
 
 				point1.folder = gui.addFolder('Point Light 1');
 				point1.folder.addColor(point1, 'color');
@@ -107,15 +118,25 @@
 				point1.folder.add(point1, 'helperVisibility').onChange(function(status){
 					point1.helper.visible = status;
 				});
+				point1.folder.add(point1, 'shadows').onChange(function(status){
+					point1.light.castShadow = status;
+				});
 				point1.folder.open();
 
 				// Create Spot Light
 				spot1.light = new THREE.SpotLight( spot1.color, spot1.intensity, spot1.distance, spot1.decay );
 				spot1.light.position.set( spot1.positionX, spot1.positionY, spot1.positionZ );
+				spot1.light.castShadow = spot1.shadows;
+				spot1.light.shadow.camera.near = 1;
+				spot1.light.shadow.camera.far = 10;
+				spot1.light.shadow.bias = 0.01;
 				scene.add( spot1.light );
 
 				spot1.helper = new THREE.SpotLightHelper( spot1.light, 0.5 );
 				scene.add( spot1.helper );
+
+				//spot1.shadowHelper = new THREE.CameraHelper( spot1.light.shadow.camera );
+				//scene.add( spot1.shadowHelper );
 
 				spot1.folder = gui.addFolder('Spot Light 1');
 				spot1.folder.addColor(spot1, 'color');
@@ -129,6 +150,10 @@
 				spot1.folder.add(spot1, 'angle').min(0).max(1.56).step(0.1);
 				spot1.folder.add(spot1, 'helperVisibility').onChange(function(status){
 					spot1.helper.visible = status;
+					spot1.shadowHelper.visible = status;
+				});
+				spot1.folder.add(point1, 'shadows').onChange(function(status){
+					spot1.light.castShadow = status;
 				});
 				spot1.folder.open();
 
@@ -164,6 +189,8 @@
 							child.material.shininess = 0.5;
 						}
 					});
+					obj.castShadow = true;
+					obj.receiveShadow = false;
 					scene.add(obj);
 				});
 
