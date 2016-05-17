@@ -76,7 +76,7 @@ var World = (function(){
 		// Create a renderer and add it to the DOM
 		initRenderer: function(){
 			renderer = new THREE.WebGLRenderer({antialias:true});
-			renderer.setSize(WIDTH, HEIGHT);
+			renderer.setSize(window.innerWidth, window.innerHeight);
 			renderer.shadowMap.enabled = true;
 			renderer.shadowMap.type = THREE.BasicShadowMap; // For smooth use THREE.PCFSoftShadowMap
 			document.body.appendChild(renderer.domElement);
@@ -85,8 +85,8 @@ var World = (function(){
 
 		// Create a camera, zoom it out from the model a bit, and add it to the scene
 		initCamera: function(){
-			camera = new THREE.PerspectiveCamera(45, WIDTH / HEIGHT, 0.1, 20000);
-			camera.position.set(0,6,0);
+			camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1000);
+			//camera.position.set(0,6,0);
 			scene.add(camera);
 		},
 
