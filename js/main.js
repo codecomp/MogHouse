@@ -1,7 +1,7 @@
 var World = (function(){
 
 	// Setup the main global variables
-	var scene, camera, renderer, controls;
+	var scene, camera, renderer, objects = [];
 
 	// Setup gui global variable
 	var params,
@@ -42,6 +42,18 @@ var World = (function(){
 		instructions 	= document.getElementById( 'instructions'),
 		havePointerLock = 'pointerLockElement' in document || 'mozPointerLockElement' in document || 'webkitPointerLockElement' in document;
 
+	// Setup controls variables
+	var controls,
+		controlsMinY = 2;
+		controlsEnabled = false,
+		moveForward = false,
+		moveBackward = false,
+		moveLeft = false,
+		moveRight = false,
+		canJump = false,
+		prevTime = performance.now(),
+		velocity = new THREE.Vector3();
+
 	return {
 
 		// Sets up the scene.
@@ -53,17 +65,15 @@ var World = (function(){
 			World.initRenderer();
 			World.initCamera();
 			World.initLights();
+			World.initControls();
+
+			World.loadModels();
 
 			// Create grid helper to aid in positioning
 			var gridHelper = new THREE.GridHelper( 10, 1 );
 			scene.add( gridHelper );
 
-			World.loadModels();
-
-			// Add OrbitControls so that we can pan around with the mouse.
-			controls = new THREE.OrbitControls(camera, renderer.domElement);
-
-			this.animate();
+			World.animate();
 		},
 
 		// Create the scene and set the scene size.
@@ -165,6 +175,63 @@ var World = (function(){
 			ambient1.folder.open();
 		},
 
+		initControls: function(){
+			// Setup FPS controls
+			controls = new THREE.PointerLockControls( camera );
+			controls.getObject().position.y = controlsMinY;
+			scene.add( controls.getObject() );
+
+			// Inutilaise raycaster
+			raycaster = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, - 1, 0 ), 0, 10 );
+
+			// Bind keybindings
+			var onKeyDown = function ( event ) {
+				switch ( event.keyCode ) {
+					case 38: // up
+					case 87: // w
+						moveForward = true;
+						break;
+					case 37: // left
+					case 65: // a
+						moveLeft = true; break;
+					case 40: // down
+					case 83: // s
+						moveBackward = true;
+						break;
+					case 39: // right
+					case 68: // d
+						moveRight = true;
+						break;
+					case 32: // space
+						if ( canJump === true ) velocity.y += 10;
+						canJump = false;
+						break;
+				}
+			};
+			var onKeyUp = function ( event ) {
+				switch( event.keyCode ) {
+					case 38: // up
+					case 87: // w
+						moveForward = false;
+						break;
+					case 37: // left
+					case 65: // a
+						moveLeft = false;
+						break;
+					case 40: // down
+					case 83: // s
+						moveBackward = false;
+						break;
+					case 39: // right
+					case 68: // d
+						moveRight = false;
+						break;
+				}
+			};
+			document.addEventListener( 'keydown', onKeyDown, false );
+			document.addEventListener( 'keyup', onKeyUp, false );
+		},
+
 		// Load geometry and material assets into scene
 		loadModels: function(){
 			// Load moogle into scene
@@ -174,6 +241,7 @@ var World = (function(){
 					geometry,
 					new THREE.MeshFaceMaterial( materials )
 				);
+				objects.push( mesh );
 				scene.add(mesh);
 			});
 
@@ -182,6 +250,7 @@ var World = (function(){
 			loader.load('models/mog_house/mog_house.json', function(obj) {
 				obj.traverse( function ( child ) {
 					if ( child instanceof THREE.Mesh ) {
+						objects.push( mesh );
 						child.material.shininess = 0.5;
 					}
 				});
@@ -194,8 +263,8 @@ var World = (function(){
 		// Renders the scene and updates the render as needed.
 		animate: function(){
 			renderer.render( scene, camera );
-			controls.update();
 			World.updateGui();
+			World.UpdateControls();
 
 			requestAnimationFrame( World.animate );
 		},
@@ -223,6 +292,38 @@ var World = (function(){
 			// Update Ambient Light
 			ambient1.light.color.setHex( ambient1.color );
 			ambient1.light.intensity = ambient1.intensity;
+		},
+
+		// Update scene based on direct user input
+		UpdateControls: function(){
+			if ( controlsEnabled ) {
+				raycaster.ray.origin.copy( controls.getObject().position );
+				raycaster.ray.origin.y -= 10;
+				var intersections = raycaster.intersectObjects( objects );
+				var isOnObject = intersections.length > 0;
+				var time = performance.now();
+				var delta = ( time - prevTime ) / 1000;
+				velocity.x -= velocity.x * 10.0 * delta;
+				velocity.z -= velocity.z * 10.0 * delta;
+				velocity.y -= 40.0 * delta;
+				if ( moveForward ) velocity.z -= 60.0 * delta;
+				if ( moveBackward ) velocity.z += 60.0 * delta;
+				if ( moveLeft ) velocity.x -= 60.0 * delta;
+				if ( moveRight ) velocity.x += 60.0 * delta;
+				if ( isOnObject === true ) {
+					velocity.y = Math.max( 0, velocity.y );
+					canJump = true;
+				}
+				controls.getObject().translateX( velocity.x * delta );
+				controls.getObject().translateY( velocity.y * delta );
+				controls.getObject().translateZ( velocity.z * delta );
+				if ( controls.getObject().position.y < controlsMinY ) {
+					velocity.y = 0;
+					controls.getObject().position.y = controlsMinY;
+					canJump = true;
+				}
+				prevTime = time;
+			}
 		},
 
 		// Update canvas on resize
