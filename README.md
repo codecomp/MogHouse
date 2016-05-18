@@ -1,4 +1,4 @@
-#Kupo Clicker
+#Mog House
 
 An experimentation into importing assets from Final Fantasy XI into Three Js in a usable way
 
