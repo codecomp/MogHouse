@@ -35,6 +35,10 @@ var World = (function(){
 		ambient1 = {
 			color : 0x404040,
 			intensity : 0.6
+		},
+		lantern = {
+			emissiveColor: 0xdca36b,
+			emissiveIntensity : 0.25
 		};
 
 	// Setup pointer lock variables
@@ -247,7 +251,25 @@ var World = (function(){
 
 			// Load mog house into scene
 			loader = new THREE.ObjectLoader();
-			loader.load('models/mog_house/mog_house.json', function(obj) {
+			loader.load('models/mog_house/blender/export/mog_house.json', function(obj) {
+				// Save a referee the the lantern glass mesh for application of emission
+				lantern.material = obj.children[9].material;
+
+				console.log( lantern.material.emissive );
+
+				// Set defaults for lantern emissive colour
+				lantern.material.emissive.setHex( lantern.emissiveColor );
+				lantern.material.emissiveIntensity = lantern.emissiveIntensity;
+
+				// Setup emissive GUI
+				point1.folder.addColor(lantern, 'emissiveColor').onChange(function(status){
+					lantern.material.emissive.setHex( lantern.emissiveColor );
+				});
+				point1.folder.add(lantern, 'emissiveIntensity').min(0).max(1.5).step(0.05).onChange(function(status){
+					lantern.material.emissiveIntensity = lantern.emissiveIntensity;
+				});
+
+				// Modify mesh before adding them to scene
 				obj.traverse( function ( child ) {
 					if ( child instanceof THREE.Mesh ) {
 						objects.push( mesh );
