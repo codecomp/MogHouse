@@ -188,9 +188,6 @@ var World = (function(){
 			controls.getObject().position.y = controlsMinY;
 			scene.add( controls.getObject() );
 
-			// Initialise raycaster
-			raycaster = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3(), 0, 10 );
-
 			// Bind keybindings
 			var onKeyDown = function ( event ) {
 				switch ( event.keyCode ) {
@@ -281,6 +278,7 @@ var World = (function(){
 			});
 		},
 
+		// Create geometry for use in collision detection
 		createCollisionGeometry: function(){
 			var geometry,
 				material = new THREE.MeshBasicMaterial( { color: 0xff0000, wireframe:true } );
@@ -317,33 +315,33 @@ var World = (function(){
 			collisionObjects.push( bed );
 
 			// Add front and rear wall geometry
-			geometry = new THREE.PlaneGeometry( 12, 5, 4 );
+			geometry = new THREE.PlaneGeometry( 12, 6, 4 );
 
 			var wallFront = new THREE.Mesh( geometry, material );
-			wallFront.position.y = 2.5;
+			wallFront.position.y = 2;
 			wallFront.position.z = 7;
 			wallFront.rotateY(Math.PI);
 			scene.add( wallFront );
 			collisionObjects.push( wallFront );
 
 			var wallBack = new THREE.Mesh( geometry, material );
-			wallBack.position.y = 2.5;
+			wallBack.position.y = 2;
 			wallBack.position.z = -7;
 			scene.add( wallBack );
 			collisionObjects.push( wallBack );
 
 			// Add side wall geometries
-			geometry = new THREE.PlaneGeometry( 14, 5, 5 );
+			geometry = new THREE.PlaneGeometry( 14, 6, 5 );
 
 			var wallLeft = new THREE.Mesh( geometry, material );
-			wallLeft.position.y = 2.5;
+			wallLeft.position.y = 2;
 			wallLeft.position.x = -6;
 			wallLeft.rotateY(Math.PI / 2);
 			scene.add( wallLeft );
 			collisionObjects.push( wallLeft );
 
 			var wallRight = new THREE.Mesh( geometry, material );
-			wallRight.position.y = 2.5;
+			wallRight.position.y = 2;
 			wallRight.position.x = 6;
 			wallRight.rotateY(Math.PI / 2);
 			wallRight.rotateX((Math.PI * 180) / 180);
@@ -388,13 +386,6 @@ var World = (function(){
 		// Update scene based on direct user input
 		updateControls: function(){
 			if ( controlsEnabled ) {
-				raycaster.ray.origin.copy( controls.getObject().position );
-				raycaster.ray.origin.y -= controlsMinY;
-
-				// TODO fix jumping collision detection
-
-				var intersections = raycaster.intersectObjects( collisionObjects );
-				var isOnObject = intersections.length > 0;
 				var time = performance.now();
 				var delta = ( time - prevTime ) / 1000;
 
@@ -408,16 +399,12 @@ var World = (function(){
 				if ( moveBackward ) velocity.z += 60.0 * delta;
 				if ( moveLeft ) velocity.x -= 60.0 * delta;
 				if ( moveRight ) velocity.x += 60.0 * delta;
-				if ( isOnObject === true ) {
-					velocity.y = Math.max( 0, velocity.y );
-					canJump = true;
-				}
 
 				// TODO fix infinitely small velocities;
 
 				// Stop when collision is detected
 				var position = controls.getObject().position.clone();
-				position.setY( 0.5 );
+				position.setY( position.y - controlsMinY );
 
 				var direction = camera.getWorldDirection().clone();
 				direction.setY( 0 );
@@ -426,6 +413,10 @@ var World = (function(){
 				if( velocity.z > 0 && this.checkCollisionBack(position, direction.clone()) ) velocity.z = 0;
 				if( velocity.x < 0 && this.checkCollisionLeft(position, direction.clone()) ) velocity.x = 0;
 				if( velocity.x > 0 && this.checkCollisionRight(position, direction.clone()) ) velocity.x = 0;
+				if( this.checkCollisionDown() ){
+					velocity.y = Math.max( 0, velocity.y );
+					canJump = true;
+				}
 
 				// Update based on velocity
 				controls.getObject().translateX( velocity.x * delta );
@@ -438,6 +429,17 @@ var World = (function(){
 				}
 				prevTime = time;
 			}
+		},
+
+		checkCollisionDown: function(){
+			var near = 0,
+				far = controlsMinY - 1; // Set far to the "height" of the camera minus 1 to not be so far off objects in the room
+
+			raycaster = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3(0, -1, 0), near, far );
+			raycaster.ray.origin.copy( controls.getObject().position );
+			raycaster.ray.origin.y -= controlsMinY;
+
+			return raycaster.intersectObjects( collisionObjects ).length > 0;
 		},
 
 		checkCollisionFront: function (position, direction){
