@@ -1,7 +1,7 @@
 var World = (function(){
 
 	// Setup the main global variables
-	var scene, camera, renderer, objects = [];
+	var scene, camera, renderer, collisionObjects = [];
 
 	// Setup gui global variable
 	var params,
@@ -56,7 +56,8 @@ var World = (function(){
 		moveRight = false,
 		canJump = false,
 		prevTime = performance.now(),
-		velocity = new THREE.Vector3();
+		velocity = new THREE.Vector3(),
+		collisionArrow = {};
 
 	return {
 
@@ -72,6 +73,7 @@ var World = (function(){
 			World.initControls();
 
 			World.loadModels();
+			World.createCollisionGeometry();
 
 			// Create grid helper to aid in positioning
 			var gridHelper = new THREE.GridHelper( 10, 1 );
@@ -179,14 +181,15 @@ var World = (function(){
 			ambient1.folder.open();
 		},
 
+		// Initialise control scheme and bing key controls
 		initControls: function(){
 			// Setup FPS controls
 			controls = new THREE.PointerLockControls( camera );
 			controls.getObject().position.y = controlsMinY;
 			scene.add( controls.getObject() );
 
-			// Inutilaise raycaster
-			raycaster = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, - 1, 0 ), 0, 10 );
+			// Initialise raycaster
+			raycaster = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3(), 0, 10 );
 
 			// Bind keybindings
 			var onKeyDown = function ( event ) {
@@ -245,7 +248,6 @@ var World = (function(){
 					geometry,
 					new THREE.MeshFaceMaterial( materials )
 				);
-				objects.push( mesh );
 				scene.add(mesh);
 			});
 
@@ -254,8 +256,6 @@ var World = (function(){
 			loader.load('models/mog_house/blender/export/mog_house.json', function(obj) {
 				// Save a referee the the lantern glass mesh for application of emission
 				lantern.material = obj.children[9].material;
-
-				console.log( lantern.material.emissive );
 
 				// Set defaults for lantern emissive colour
 				lantern.material.emissive.setHex( lantern.emissiveColor );
@@ -272,7 +272,6 @@ var World = (function(){
 				// Modify mesh before adding them to scene
 				obj.traverse( function ( child ) {
 					if ( child instanceof THREE.Mesh ) {
-						objects.push( mesh );
 						child.material.shininess = 0.5;
 					}
 				});
@@ -282,11 +281,81 @@ var World = (function(){
 			});
 		},
 
+		createCollisionGeometry: function(){
+			var geometry,
+				material = new THREE.MeshBasicMaterial( { color: 0xff0000, wireframe:true } );
+
+			// Add scenery geometry
+			geometry = new THREE.BoxGeometry( 2, 1, 3 );
+			geometry.translate(-5, 0.5, -2.5);
+			var table = new THREE.Mesh( geometry, material );
+			scene.add( table );
+			collisionObjects.push( table );
+
+			geometry = new THREE.BoxGeometry( 1, 2, 1.25);
+			geometry.translate(-5.5, 1, -5.125);
+			var cupboard = new THREE.Mesh( geometry, material );
+			scene.add( cupboard );
+			collisionObjects.push( cupboard );
+
+			geometry = new THREE.BoxGeometry( 1.25, 1, 5);
+			geometry.translate(-5.25, 0.5, 4.125);
+			var chest = new THREE.Mesh( geometry, material );
+			scene.add( chest );
+			collisionObjects.push( chest );
+
+			geometry = new THREE.BoxGeometry( 1, 1, 1.15);
+			geometry.translate(5.25, 0.5, -2.15);
+			var coffer = new THREE.Mesh( geometry, material );
+			scene.add( coffer );
+			collisionObjects.push( coffer );
+
+			geometry = new THREE.BoxGeometry( 2.5, 0.75, 3.5);
+			geometry.translate(4.75, 0.375, -4.75);
+			var bed = new THREE.Mesh( geometry, material );
+			scene.add( bed );
+			collisionObjects.push( bed );
+
+			// Add front and rear wall geometry
+			geometry = new THREE.PlaneGeometry( 12, 5, 4 );
+
+			var wallFront = new THREE.Mesh( geometry, material );
+			wallFront.position.y = 2.5;
+			wallFront.position.z = 7;
+			wallFront.rotateY(Math.PI);
+			scene.add( wallFront );
+			collisionObjects.push( wallFront );
+
+			var wallBack = new THREE.Mesh( geometry, material );
+			wallBack.position.y = 2.5;
+			wallBack.position.z = -7;
+			scene.add( wallBack );
+			collisionObjects.push( wallBack );
+
+			// Add side wall geometries
+			geometry = new THREE.PlaneGeometry( 14, 5, 5 );
+
+			var wallLeft = new THREE.Mesh( geometry, material );
+			wallLeft.position.y = 2.5;
+			wallLeft.position.x = -6;
+			wallLeft.rotateY(Math.PI / 2);
+			scene.add( wallLeft );
+			collisionObjects.push( wallLeft );
+
+			var wallRight = new THREE.Mesh( geometry, material );
+			wallRight.position.y = 2.5;
+			wallRight.position.x = 6;
+			wallRight.rotateY(Math.PI / 2);
+			wallRight.rotateX((Math.PI * 180) / 180);
+			scene.add( wallRight );
+			collisionObjects.push( wallRight );
+		},
+
 		// Renders the scene and updates the render as needed.
 		animate: function(){
 			renderer.render( scene, camera );
 			World.updateGui();
-			World.UpdateControls();
+			World.updateControls();
 
 			requestAnimationFrame( World.animate );
 		},
@@ -317,18 +386,25 @@ var World = (function(){
 		},
 
 		// Update scene based on direct user input
-		UpdateControls: function(){
+		updateControls: function(){
 			if ( controlsEnabled ) {
 				raycaster.ray.origin.copy( controls.getObject().position );
-				raycaster.ray.origin.y -= 10;
-				var intersections = raycaster.intersectObjects( objects );
+				raycaster.ray.origin.y -= controlsMinY;
+
+				// TODO fix jumping collision detection
+
+				var intersections = raycaster.intersectObjects( collisionObjects );
 				var isOnObject = intersections.length > 0;
 				var time = performance.now();
 				var delta = ( time - prevTime ) / 1000;
+
+				// Decelerate
 				velocity.x -= velocity.x * 10.0 * delta;
 				velocity.z -= velocity.z * 10.0 * delta;
 				velocity.y -= 40.0 * delta;
-				if ( moveForward ) velocity.z -= 60.0 * delta;
+
+				// Accelerate if input detected
+				if ( moveForward  ) velocity.z -= 60.0 * delta;
 				if ( moveBackward ) velocity.z += 60.0 * delta;
 				if ( moveLeft ) velocity.x -= 60.0 * delta;
 				if ( moveRight ) velocity.x += 60.0 * delta;
@@ -336,6 +412,22 @@ var World = (function(){
 					velocity.y = Math.max( 0, velocity.y );
 					canJump = true;
 				}
+
+				// TODO fix infinitely small velocities;
+
+				// Stop when collision is detected
+				var position = controls.getObject().position.clone();
+				position.setY( 0.5 );
+
+				var direction = camera.getWorldDirection().clone();
+				direction.setY( 0 );
+
+				if( velocity.z < 0 && this.checkCollisionFront(position, direction.clone()) ) velocity.z = 0;
+				if( velocity.z > 0 && this.checkCollisionBack(position, direction.clone()) ) velocity.z = 0;
+				if( velocity.x < 0 && this.checkCollisionLeft(position, direction.clone()) ) velocity.x = 0;
+				if( velocity.x > 0 && this.checkCollisionRight(position, direction.clone()) ) velocity.x = 0;
+
+				// Update based on velocity
 				controls.getObject().translateX( velocity.x * delta );
 				controls.getObject().translateY( velocity.y * delta );
 				controls.getObject().translateZ( velocity.z * delta );
@@ -346,6 +438,55 @@ var World = (function(){
 				}
 				prevTime = time;
 			}
+		},
+
+		checkCollisionFront: function (position, direction){
+			raycaster = new THREE.Raycaster( position.clone(), direction.clone(), 0, 1 );
+
+			scene.remove ( collisionArrow );
+			collisionArrow = new THREE.ArrowHelper( direction.clone(), position, 100, Math.random() * 0xffffff );
+			scene.add( collisionArrow );
+
+			return raycaster.intersectObjects( collisionObjects ).length > 0;
+		},
+
+		checkCollisionBack: function (position, direction){
+			var rotationMatrix = new THREE.Matrix4();
+			rotationMatrix.makeRotationY(180 * Math.PI / 180);
+			direction.applyMatrix4(rotationMatrix);
+
+			scene.remove ( collisionArrow );
+			collisionArrow = new THREE.ArrowHelper( direction.clone(), position, 100, Math.random() * 0xffffff );
+			scene.add( collisionArrow );
+
+			raycaster = new THREE.Raycaster( position.clone(), direction.clone(), 0, 1 );
+			return raycaster.intersectObjects( collisionObjects ).length > 0;
+		},
+
+		checkCollisionLeft: function (position, direction){
+			var rotationMatrix = new THREE.Matrix4();
+			rotationMatrix.makeRotationY(90 * Math.PI / 180);
+			direction.applyMatrix4(rotationMatrix);
+
+			scene.remove ( collisionArrow );
+			collisionArrow = new THREE.ArrowHelper( direction.clone(), position, 100, Math.random() * 0xffffff );
+			scene.add( collisionArrow );
+
+			raycaster = new THREE.Raycaster( position.clone(), direction.clone(), 0, 1 );
+			return raycaster.intersectObjects( collisionObjects ).length > 0;
+		},
+
+		checkCollisionRight: function (position, direction){
+			var rotationMatrix = new THREE.Matrix4();
+			rotationMatrix.makeRotationY(270 * Math.PI / 180);
+			direction.applyMatrix4(rotationMatrix);
+
+			scene.remove ( collisionArrow );
+			collisionArrow = new THREE.ArrowHelper( direction.clone(), position, 100, Math.random() * 0xffffff );
+			scene.add( collisionArrow );
+
+			raycaster = new THREE.Raycaster( position.clone(), direction.clone(), 0, 1 );
+			return raycaster.intersectObjects( collisionObjects ).length > 0;
 		},
 
 		// Update canvas on resize
