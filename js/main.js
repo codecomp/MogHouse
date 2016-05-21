@@ -452,7 +452,7 @@ var World = (function(){
 
 		checkCollisionBack: function (position, direction){
 			var rotationMatrix = new THREE.Matrix4();
-			rotationMatrix.makeRotationY(180 * Math.PI / 180);
+			rotationMatrix.makeRotationY(Math.PI);
 			direction.applyMatrix4(rotationMatrix);
 
 			scene.remove ( collisionArrow );
@@ -465,7 +465,7 @@ var World = (function(){
 
 		checkCollisionLeft: function (position, direction){
 			var rotationMatrix = new THREE.Matrix4();
-			rotationMatrix.makeRotationY(90 * Math.PI / 180);
+			rotationMatrix.makeRotationY(Math.PI / 2);
 			direction.applyMatrix4(rotationMatrix);
 
 			scene.remove ( collisionArrow );
@@ -478,7 +478,7 @@ var World = (function(){
 
 		checkCollisionRight: function (position, direction){
 			var rotationMatrix = new THREE.Matrix4();
-			rotationMatrix.makeRotationY(270 * Math.PI / 180);
+			rotationMatrix.makeRotationY(3 * Math.PI / 2);
 			direction.applyMatrix4(rotationMatrix);
 
 			scene.remove ( collisionArrow );
