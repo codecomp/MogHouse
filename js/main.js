@@ -4,8 +4,12 @@ var World = (function(){
 	var scene, camera, renderer, stats, collisionObjects = [];
 
 	// Setup gui global variable
-	var params,
-		gui = new dat.GUI();
+	var params = {
+			gridVisibility: false,
+			collisionVisibility: false,
+			rayHelperVisibility: false
+		},
+		gui;
 
 	// Setup light global variables and presets
 	var point1 = {
@@ -16,7 +20,7 @@ var World = (function(){
 			intensity : 1,
 			distance : 8,
 			decay : 1,
-			helperVisibility : true,
+			helperVisibility : false,
 			shadows : true
 		},
 		spot1 = {
@@ -29,7 +33,7 @@ var World = (function(){
 			decay : 1.1,
 			penumbra: 0,
 			angle : 1,
-			helperVisibility : true,
+			helperVisibility : false,
 			shadows : true
 		},
 		ambient1 = {
@@ -63,10 +67,10 @@ var World = (function(){
 
 		// Sets up the scene.
 		init: function(){
-
 			World.windowResize();
 			World.lockPointer();
 			World.initScene();
+			World.initGui();
 			World.initRenderer();
 			World.initCamera();
 			World.initLights();
@@ -75,18 +79,37 @@ var World = (function(){
 			World.loadModels();
 			World.createCollisionGeometry();
 
-			// Create grid helper to aid in positioning
-			var gridHelper = new THREE.GridHelper( 10, 1 );
-			scene.add( gridHelper );
+			World.animate();
+		},
 
+		initGui: function(){
 			// Initialise the stats gui
 			stats = new Stats();
 			document.body.appendChild(stats.dom);
 
-			World.animate();
+			// Initialise GUI and GU folders
+			gui = new dat.GUI();
+			gui.general = gui.addFolder('General');
+			gui.lantern = gui.addFolder('Lantern');
+			gui.fireplace = gui.addFolder('Fireplace');
+			gui.ambient = gui.addFolder('Ambient');
+
+			// Create grid helper to aid in positioning
+			var gridHelper = new THREE.GridHelper( 10, 1 );
+			gridHelper.visible = params.gridVisibility;
+			scene.add( gridHelper );
+
+			gui.general.add(params, 'gridVisibility').onChange(function(status){
+				gridHelper.visible = status;
+			});
+
+			// Assign contrls for collision arrow visibility
+			gui.general.add(params, 'rayHelperVisibility').onChange(function(status){
+				collisionArrow.visible = status;
+			});
 		},
 
-		// Create the scene and set the scene size.
+		// Create the scene and set the guscene size.
 		initScene: function(){
 			scene = new THREE.Scene();
 		},
@@ -119,27 +142,28 @@ var World = (function(){
 			point1.light.shadow.bias = 0.01;
 			scene.add( point1.light );
 
+			// Crate point light helpers
 			point1.helper = new THREE.PointLightHelper( point1.light, 0.5 );
+			point1.helper.visible = point1.helperVisibility;
 			scene.add( point1.helper );
 
 			//point1.shadowHelper = new THREE.CameraHelper( point1.light.shadow.camera );
 			//scene.add( point1.shadowHelper );
 
-			point1.folder = gui.addFolder('Point Light 1');
-			point1.folder.addColor(point1, 'color');
-			point1.folder.add(point1, 'positionX').min(-30).max(30).step(1);
-			point1.folder.add(point1, 'positionY').min(-30).max(30).step(1);
-			point1.folder.add(point1, 'positionZ').min(-30).max(30).step(1);
-			point1.folder.add(point1, 'intensity').min(0).max(10).step(0.1);
-			point1.folder.add(point1, 'distance').min(0).max(100).step(1);
-			point1.folder.add(point1, 'decay').min(0).max(100).step(0.1);
-			point1.folder.add(point1, 'helperVisibility').onChange(function(status){
+			// Assign point light GUI
+			gui.lantern.addColor(point1, 'color');
+			gui.lantern.add(point1, 'positionX').min(-30).max(30).step(1);
+			gui.lantern.add(point1, 'positionY').min(-30).max(30).step(1);
+			gui.lantern.add(point1, 'positionZ').min(-30).max(30).step(1);
+			gui.lantern.add(point1, 'intensity').min(0).max(10).step(0.1);
+			gui.lantern.add(point1, 'distance').min(0).max(100).step(1);
+			gui.lantern.add(point1, 'decay').min(0).max(100).step(0.1);
+			gui.lantern.add(point1, 'helperVisibility').onChange(function(status){
 				point1.helper.visible = status;
 			});
-			point1.folder.add(point1, 'shadows').onChange(function(status){
+			gui.lantern.add(point1, 'shadows').onChange(function(status){
 				point1.light.castShadow = status;
 			});
-			point1.folder.open();
 
 			// Create Spot Light
 			spot1.light = new THREE.SpotLight( spot1.color, spot1.intensity, spot1.distance, spot1.decay );
@@ -150,39 +174,38 @@ var World = (function(){
 			spot1.light.shadow.bias = 0.01;
 			scene.add( spot1.light );
 
+			// Create spot light helpers
 			spot1.helper = new THREE.SpotLightHelper( spot1.light, 0.5 );
+			spot1.helper.visible = spot1.helperVisibility;
 			scene.add( spot1.helper );
 
 			//spot1.shadowHelper = new THREE.CameraHelper( spot1.light.shadow.camera );
 			//scene.add( spot1.shadowHelper );
 
-			spot1.folder = gui.addFolder('Spot Light 1');
-			spot1.folder.addColor(spot1, 'color');
-			spot1.folder.add(spot1, 'positionX').min(-30).max(30).step(1);
-			spot1.folder.add(spot1, 'positionY').min(-30).max(30).step(1);
-			spot1.folder.add(spot1, 'positionZ').min(-30).max(30).step(1);
-			spot1.folder.add(spot1, 'intensity').min(0).max(10).step(0.1);
-			spot1.folder.add(spot1, 'distance').min(0).max(100).step(1);
-			spot1.folder.add(spot1, 'decay').min(0).max(100).step(0.1);
-			spot1.folder.add(spot1, 'penumbra').min(0).max(1).step(0.1);
-			spot1.folder.add(spot1, 'angle').min(0).max(1.56).step(0.1);
-			spot1.folder.add(spot1, 'helperVisibility').onChange(function(status){
+			// Assign spot light GUI
+			gui.fireplace.addColor(spot1, 'color');
+			gui.fireplace.add(spot1, 'positionX').min(-30).max(30).step(1);
+			gui.fireplace.add(spot1, 'positionY').min(-30).max(30).step(1);
+			gui.fireplace.add(spot1, 'positionZ').min(-30).max(30).step(1);
+			gui.fireplace.add(spot1, 'intensity').min(0).max(10).step(0.1);
+			gui.fireplace.add(spot1, 'distance').min(0).max(100).step(1);
+			gui.fireplace.add(spot1, 'decay').min(0).max(100).step(0.1);
+			gui.fireplace.add(spot1, 'penumbra').min(0).max(1).step(0.1);
+			gui.fireplace.add(spot1, 'angle').min(0).max(1.56).step(0.1);
+			gui.fireplace.add(spot1, 'helperVisibility').onChange(function(status){
 				spot1.helper.visible = status;
-				spot1.shadowHelper.visible = status;
 			});
-			spot1.folder.add(point1, 'shadows').onChange(function(status){
+			gui.fireplace.add(point1, 'shadows').onChange(function(status){
 				spot1.light.castShadow = status;
 			});
-			spot1.folder.open();
 
 			// Create Ambient Light
 			ambient1.light = new THREE.AmbientLight( ambient1.color, ambient1.intensity ); // soft white light
 			scene.add( ambient1.light );
 
-			ambient1.folder = gui.addFolder('Ambient Light 1');
-			ambient1.folder.addColor(ambient1, 'color');
-			ambient1.folder.add(ambient1, 'intensity').min(0).max(10).step(0.1);
-			ambient1.folder.open();
+			// Assign ambient light GUI
+			gui.ambient.addColor(ambient1, 'color');
+			gui.ambient.add(ambient1, 'intensity').min(0).max(10).step(0.1);
 		},
 
 		// Initialise control scheme and bing key controls
@@ -263,10 +286,10 @@ var World = (function(){
 				lantern.material.emissiveIntensity = lantern.emissiveIntensity;
 
 				// Setup emissive GUI
-				point1.folder.addColor(lantern, 'emissiveColor').onChange(function(status){
+				gui.lantern.addColor(lantern, 'emissiveColor').onChange(function(status){
 					lantern.material.emissive.setHex( lantern.emissiveColor );
 				});
-				point1.folder.add(lantern, 'emissiveIntensity').min(0).max(1.5).step(0.05).onChange(function(status){
+				gui.lantern.add(lantern, 'emissiveIntensity').min(0).max(1.5).step(0.05).onChange(function(status){
 					lantern.material.emissiveIntensity = lantern.emissiveIntensity;
 				});
 
@@ -286,6 +309,12 @@ var World = (function(){
 		createCollisionGeometry: function(){
 			var geometry,
 				material = new THREE.MeshBasicMaterial( { color: 0xff0000, wireframe:true } );
+
+			// Assign GUI
+			material.visible = params.collisionVisibility;
+			gui.general.add(params, 'collisionVisibility').onChange(function(status){
+				material.visible = status;
+			});
 
 			// Add scenery geometry
 			geometry = new THREE.BoxGeometry( 2, 1, 3 );
@@ -454,6 +483,7 @@ var World = (function(){
 
 			scene.remove ( collisionArrow );
 			collisionArrow = new THREE.ArrowHelper( direction.clone(), position, 100, Math.random() * 0xffffff );
+			collisionArrow.visible = params.rayHelperVisibility;
 			scene.add( collisionArrow );
 
 			return raycaster.intersectObjects( collisionObjects ).length > 0;
@@ -466,6 +496,7 @@ var World = (function(){
 
 			scene.remove ( collisionArrow );
 			collisionArrow = new THREE.ArrowHelper( direction.clone(), position, 100, Math.random() * 0xffffff );
+			collisionArrow.visible = params.rayHelperVisibility;
 			scene.add( collisionArrow );
 
 			raycaster = new THREE.Raycaster( position.clone(), direction.clone(), 0, 1 );
@@ -479,6 +510,7 @@ var World = (function(){
 
 			scene.remove ( collisionArrow );
 			collisionArrow = new THREE.ArrowHelper( direction.clone(), position, 100, Math.random() * 0xffffff );
+			collisionArrow.visible = params.rayHelperVisibility;
 			scene.add( collisionArrow );
 
 			raycaster = new THREE.Raycaster( position.clone(), direction.clone(), 0, 1 );
@@ -492,6 +524,7 @@ var World = (function(){
 
 			scene.remove ( collisionArrow );
 			collisionArrow = new THREE.ArrowHelper( direction.clone(), position, 100, Math.random() * 0xffffff );
+			collisionArrow.visible = params.rayHelperVisibility;
 			scene.add( collisionArrow );
 
 			raycaster = new THREE.Raycaster( position.clone(), direction.clone(), 0, 1 );
