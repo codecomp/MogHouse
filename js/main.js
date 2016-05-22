@@ -1,7 +1,7 @@
 var World = (function(){
 
 	// Setup the main global variables
-	var scene, camera, renderer, collisionObjects = [];
+	var scene, camera, renderer, stats, collisionObjects = [];
 
 	// Setup gui global variable
 	var params,
@@ -78,6 +78,10 @@ var World = (function(){
 			// Create grid helper to aid in positioning
 			var gridHelper = new THREE.GridHelper( 10, 1 );
 			scene.add( gridHelper );
+
+			// Initialise the stats gui
+			stats = new Stats();
+			document.body.appendChild(stats.dom);
 
 			World.animate();
 		},
@@ -360,6 +364,9 @@ var World = (function(){
 
 		// Update scene based on GUI settings
 		updateGui: function(){
+			// Update status gui
+			stats.update();
+
 			// Update Point light
 			point1.light.color.setHex( point1.color );
 			point1.light.position.set( point1.positionX, point1.positionY, point1.positionZ );
