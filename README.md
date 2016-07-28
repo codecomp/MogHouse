@@ -128,6 +128,7 @@ An experimentation into importing assets from Final Fantasy XI into Three Js in 
  * Setup GUI options
  * Setup camera locking
  * Update camera to avoid clipping through geometry
+ * Added polish to instructions overlay
 
 ----
 
