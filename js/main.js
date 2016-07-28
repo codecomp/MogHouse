@@ -277,7 +277,7 @@ var World = (function(){
 
 			// Load mog house into scene
 			loader = new THREE.ObjectLoader();
-			loader.load('models/mog_house/blender/export/mog_house.json', function(obj) {
+			loader.load('models/mog_house/mog_house.json', function(obj) {
 				// Save a referee the the lantern glass mesh for application of emission
 				lantern.material = obj.children[9].material;
 
