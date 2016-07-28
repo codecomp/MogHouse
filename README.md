@@ -112,7 +112,6 @@ An experimentation into importing assets from Final Fantasy XI into Three Js in 
  * Add music and sound effects
  * Update collision detection to handle inclines
  * Update collision detection to detect small spaces
- * Update camera to avoid clipping through geometry
 
 ----
 
@@ -128,6 +127,7 @@ An experimentation into importing assets from Final Fantasy XI into Three Js in 
  * Setup lights
  * Setup GUI options
  * Setup camera locking
+ * Update camera to avoid clipping through geometry
 
 ----
 
