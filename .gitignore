@@ -10,3 +10,4 @@ models/*/dat
 
 # Overwrites
 !delete.me
+*.ai
