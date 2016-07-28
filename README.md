@@ -102,12 +102,32 @@ An experimentation into importing assets from Final Fantasy XI into Three Js in 
 
 ----
 
+##Road Map
+ * Add flickering options to lights (Lantern and Fireplace)
+ * Add fire model / sprite / animation into fireplace
+ * Correctly import Mog model
+ * Get idle loop animation working on mog
+ * Get animation pose swapping working on mog
+ * Setup interaction with mog (Pose swapping?)
+ * Add music and sound effects
+ * Update collision detection to handle inclines
+ * Update collision detection to detect small spaces
+ * Update camera to avoid clipping through geometry
+
+----
+
 ##Change log
 
 ###Pre Versioning
  * Setup folder structure
  * Setup test import of files
  * Setup Git ignore and Readme
+ * Imported geometry into Scene
+ * Setup camera and controls
+ * Built collision detection engine
+ * Setup lights
+ * Setup GUI options
+ * Setup camera locking
 
 ----
 
