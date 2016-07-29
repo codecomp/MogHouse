@@ -16,41 +16,44 @@
 				margin: 0;
 				overflow: hidden;
 			}
-			#blocker {
+			.blocker {
 				position: absolute;
 				width: 100%;
 				height: 100%;
 				background-color: rgba(0,0,0,0.5);
 			}
-			#instructions {
-				width: 100%;
-				height: 100%;
-				display: -webkit-box;
-				display: -moz-box;
-				display: box;
-				-webkit-box-orient: horizontal;
-				-moz-box-orient: horizontal;
-				box-orient: horizontal;
-				-webkit-box-pack: center;
-				-moz-box-pack: center;
-				box-pack: center;
-				-webkit-box-align: center;
-				-moz-box-align: center;
-				box-align: center;
+			.blocker__instructions {
+				width:100%;
+				height:100%;
 				color: #ffffff;
 				text-align: center;
 				cursor: pointer;
 			}
-			.logo{
+			.blocker__center{
+				position: absolute;
+				top:50%;
+				left:50%;
+				-webkit-transform: translate(-50%, -50%);
+				-moz-transform: translate(-50%, -50%);
+				-ms-transform: translate(-50%, -50%);
+				-o-transform: translate(-50%, -50%);
+				transform: translate(-50%, -50%);
+			}
+			.blocker__logo{
+				width:100%;
 				max-width:500px;
 				margin:0 auto 50px auto;
 			}
-			.sub-title{
+			.blocker__logo-svg{
+				width:100%;
+				height:auto;
+			}
+			.blocker__logo-title{
 				text-align:right;
 				display:block;
 				font-family:"ヒラギノ角ゴ Pro W3", "Hiragino Kaku Gothic Pro",Osaka, "メイリオ", Meiryo, "ＭＳ Ｐゴシック", "MS PGothic", sans-serif;
 			}
-			.keys{
+			.blocker__keys{
 				font-family: 'Press Start 2P', cursive;
 				font-size:10px;
 			}
@@ -59,14 +62,16 @@
 
 	<body>
 
-		<div id="blocker">
+		<div id="blocker" class="blocker">
 
-			<div id="instructions">
-				<div class="logo">
-					<img src="images/logo.svg" alt="Mog House"/>
-					<span class="sub-title">クリックして開始します</span>
+			<div id="instructions" class="blocker__instructions">
+				<div class="blocker__center">
+					<div class="blocker__logo">
+						<img class="blocker__logo-svg" src="images/logo.svg" alt="Mog House"/>
+						<span class="blocker__logo-title">クリックして開始します</span>
+					</div>
+					<span class="blocker__keys">(W, A, S, D = Move, SPACE = Jump, MOUSE = Look around)</span>
 				</div>
-				<span class="keys">(W, A, S, D = Move, SPACE = Jump, MOUSE = Look around)</span>
 			</div>
 
 		</div>
