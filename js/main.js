@@ -1,7 +1,7 @@
 var World = (function(){
 
 	// Setup the main global variables
-	var scene, camera, renderer, stats, collisionObjects = [];
+	var scene, camera, renderer, stats, collisionObjects = [], clock = new THREE.Clock();
 
 	// Setup gui global variable
 	var params = {
@@ -45,6 +45,9 @@ var World = (function(){
 			emissiveIntensity : 0.25
 		};
 
+	// Setup animated textue variables
+	var animTextures = [];
+
 	// Setup pointer lock variables
 	var blocker 		= document.getElementById( 'blocker'),
 		instructions 	= document.getElementById( 'instructions'),
@@ -77,6 +80,7 @@ var World = (function(){
 			World.initControls();
 
 			World.loadModels();
+			World.loadAnimations();
 			World.createCollisionGeometry();
 
 			World.animate();
@@ -305,6 +309,21 @@ var World = (function(){
 			});
 		},
 
+		// Create geometry and load animated materials
+		loadAnimations: function(){
+			// Create fire geometry
+			var loader = new THREE.TextureLoader();
+			var fireTexture = loader.load( 'textures/fire/sprite.png' );
+			var fireMaterial = new THREE.MeshBasicMaterial( { map: fireTexture, side:THREE.DoubleSide, transparent: true } );
+			var fireGeometry = new THREE.PlaneGeometry(0.6, 0.6, 1, 1);
+			var fire = new THREE.Mesh(fireGeometry, fireMaterial);
+			fire.position.set(-0.05, 0.4, -8);
+			scene.add(fire);
+
+			// Store the texture for animation
+			animTextures.push( new World.TextureAnimator( fireTexture, 4, 4, 16, 75 ) );
+		},
+
 		// Create geometry for use in collision detection
 		createCollisionGeometry: function(){
 			var geometry,
@@ -387,6 +406,7 @@ var World = (function(){
 			renderer.render( scene, camera );
 			World.updateGui();
 			World.updateControls();
+			World.updateAnimatedTextures();
 
 			requestAnimationFrame( World.animate );
 		},
@@ -531,6 +551,14 @@ var World = (function(){
 			return raycaster.intersectObjects( collisionObjects ).length > 0;
 		},
 
+		updateAnimatedTextures: function(){
+			var delta = clock.getDelta();
+
+			animTextures.forEach(function(element){
+				element.update(1000 * delta);
+			});
+		},
+
 		// Update canvas on resize
 		windowResize: function(){
 			window.addEventListener('resize', function () {
@@ -590,8 +618,43 @@ var World = (function(){
 			} else {
 				instructions.innerHTML = 'Your browser doesn\'t seem to support Pointer Lock API';
 			}
-		}
+		},
 
+		TextureAnimator: function(texture, tilesHoriz, tilesVert, numTiles, tileDispDuration) {
+			// Note: texture passed by reference, will be updated by the updateAnimatedTextures function.
+
+			this.tilesHorizontal = tilesHoriz;
+			this.tilesVertical = tilesVert;
+			//  How many images does this spritesheet contain?
+			//  usually equals tilesHoriz * tilesVert, but not necessarily,
+			//  if there at blank tiles at the bottom of the spritesheet.
+			this.numberOfTiles = numTiles;
+			texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+			texture.repeat.set(1 / this.tilesHorizontal, 1 / this.tilesVertical);
+
+			// How long should each image be displayed?
+			this.tileDisplayDuration = tileDispDuration;
+
+			// How long has the current image been displayed?
+			this.currentDisplayTime = 0;
+
+			// Which image is currently being displayed?
+			this.currentTile = 0;
+
+			this.update = function (milliSec) {
+				this.currentDisplayTime += milliSec;
+				while (this.currentDisplayTime > this.tileDisplayDuration) {
+					this.currentDisplayTime -= this.tileDisplayDuration;
+					this.currentTile++;
+					if (this.currentTile == this.numberOfTiles)
+						this.currentTile = 0;
+					var currentColumn = this.currentTile % this.tilesHorizontal;
+					texture.offset.x = currentColumn / this.tilesHorizontal;
+					var currentRow = Math.floor(this.currentTile / this.tilesHorizontal);
+					texture.offset.y = currentRow / this.tilesVertical;
+				}
+			};
+		}
 	}
 
 })();
